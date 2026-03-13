@@ -13,6 +13,7 @@ export default function Header() {
           </Link>
           <div className="flex items-center">
           
+            <UserButton />
           </div>
         </div>
       </div>
