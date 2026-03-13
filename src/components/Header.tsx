@@ -12,7 +12,7 @@ export default function Header() {
             Quiz App
           </Link>
           <div className="flex items-center">
-            <UserButton afterSignOutUrl="/" />
+          
           </div>
         </div>
       </div>
