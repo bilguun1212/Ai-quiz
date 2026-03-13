@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+
 import {
-  ClerkLoaded,
   ClerkProvider,
-  SignedIn,
-  SignedOut,
   SignIn,
+  ClerkLoaded,
+  Show as SignedIn,
+  Show as SignedOut,
 } from "@clerk/nextjs";
+
 import Header from "@/components/Header";
 import { UserProvider } from "@/contexts/UserContext";
 
@@ -24,25 +26,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    >
+    <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
           <ClerkLoaded>
-            <SignedIn>
+
+          
+            <SignedIn when={(auth: any) => auth}>
               <UserProvider>
                 <Header />
-                <main className="mx-auto">{children}</main>
+                <main className="mx-auto">
+                  {children}
+                </main>
               </UserProvider>
             </SignedIn>
-            <SignedOut>
+
+            <SignedOut when={(auth: any) => !auth}>
               <div className="flex justify-center items-center min-h-screen bg-gray-50">
                 <div className="p-6 w-full max-w-md">
-                  <SignIn />
+                  <SignIn routing="hash" />
                 </div>
               </div>
             </SignedOut>
+
           </ClerkLoaded>
         </body>
       </html>
