@@ -6,8 +6,8 @@ import {
   ClerkProvider,
   SignIn,
   ClerkLoaded,
-  Show as SignedIn,
-  Show as SignedOut,
+  SignedIn,
+  SignedOut,
 } from "@clerk/nextjs";
 
 import Header from "@/components/Header";
@@ -30,9 +30,9 @@ export default function RootLayout({
       <html lang="en">
         <body className={inter.className}>
           <ClerkLoaded>
-
-          
-            <SignedIn when={(auth: any) => auth}>
+            
+            {/* Нэвтэрсэн үед */}
+            <SignedIn>
               <UserProvider>
                 <Header />
                 <main className="mx-auto">
@@ -41,7 +41,8 @@ export default function RootLayout({
               </UserProvider>
             </SignedIn>
 
-            <SignedOut when={(auth: any) => !auth}>
+            {/* Нэвтрээгүй үед */}
+            <SignedOut>
               <div className="flex justify-center items-center min-h-screen bg-gray-50">
                 <div className="p-6 w-full max-w-md">
                   <SignIn routing="hash" />
