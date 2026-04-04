@@ -12,6 +12,21 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { clerkId } });
     if (!user) return new NextResponse("User not found", { status: 404 });
 
+    // Check for existing article with same content to prevent duplicates
+    const existingArticle = await prisma.article.findFirst({
+      where: {
+        userId: user.id,
+        content: content,
+      },
+      include: {
+        quizzes: true,
+      },
+    });
+
+    if (existingArticle) {
+      return NextResponse.json(existingArticle);
+    }
+
     const article = await prisma.article.create({
       data: {
         title,
@@ -25,6 +40,9 @@ export async function POST(req: Request) {
             answer: q.answer,
           })) || [],
         },
+      },
+      include: {
+        quizzes: true,
       },
     });
 

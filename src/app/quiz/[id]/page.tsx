@@ -69,10 +69,14 @@ export default function QuizPage() {
 
   // Fetch article and quiz data
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchArticle = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/articles/${params.id}`);
+        const response = await fetch(`/api/articles/${params.id}`, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch article");
@@ -88,7 +92,8 @@ export default function QuizPage() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ content: data.content }),
+            body: JSON.stringify({ content: data.content, title: data.title }),
+            signal: controller.signal,
           });
 
           if (!quizResponse.ok) {
@@ -106,6 +111,7 @@ export default function QuizPage() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({ quizzes: quizData.quizzes }),
+              signal: controller.signal,
             }
           );
 
@@ -114,13 +120,18 @@ export default function QuizPage() {
           }
 
           // Fetch updated article with quizzes
-          const updatedResponse = await fetch(`/api/articles/${params.id}`);
+          const updatedResponse = await fetch(`/api/articles/${params.id}`, {
+            signal: controller.signal,
+          });
           const updatedData = await updatedResponse.json();
           setArticle(updatedData);
         } else {
           setArticle(data);
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return; // Ignore abort errors
+        }
         console.error("Error:", error);
         setError(error instanceof Error ? error.message : "An error occurred");
       } finally {
@@ -129,6 +140,8 @@ export default function QuizPage() {
     };
 
     fetchArticle();
+    
+    return () => controller.abort();
   }, [params.id]);
 
   // Fetch previous scores

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import ArticleForm from "@/components/ArticleForm";
@@ -18,18 +18,27 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [articleLoading, setArticleLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false); // Prevent double saves
+  const isSavingRef = useRef(false); // Ref to prevent race conditions
 
   const [summary, setSummary] = useState<string | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const router = useRouter();
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchArticles = async () => {
       try {
-        const response = await fetch("/api/articles");
+        const response = await fetch("/api/articles", {
+          signal: controller.signal,
+        });
         const data = await response.json();
         setArticles(Array.isArray(data) ? data : []);
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return; // Ignore abort errors
+        }
         console.error("Error fetching articles:", error);
       } finally {
         setArticleLoading(false);
@@ -37,6 +46,8 @@ export default function Home() {
     };
 
     fetchArticles();
+    
+    return () => controller.abort();
   }, []);
 
   const handleGenerateSummary = async (e: React.FormEvent) => {
@@ -76,12 +87,21 @@ export default function Home() {
   };
 
   const handleSaveArticle = async () => {
+    // Prevent double saves
+    if (isSavingRef.current || loading) {
+      toast.error("Save in progress, please wait...");
+      return;
+    }
+
     if (!summary || !title) {
       toast.error("Гарчиг оруулаад, эхлээд Summary үүсгэнэ үү");
       return;
     }
 
+    isSavingRef.current = true;
+    setIsSaving(true);
     setLoading(true);
+    
     try {
       const saveResponse = await fetch("/api/articles", {
         method: "POST",
@@ -104,10 +124,16 @@ export default function Home() {
         setTitle("");
         setContent("");
         setSummary(null);
+      } else {
+        const error = await saveResponse.json();
+        toast.error(error.error || "Хадгалахад алдаа гарлаа");
       }
     } catch (error) {
+      console.error("Save error:", error);
       toast.error("Хадгалахад алдаа гарлаа");
     } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
       setLoading(false);
     }
   };
@@ -155,6 +181,7 @@ export default function Home() {
             content={content}
             summary={summary}
             loading={loading}
+            isSaving={isSaving}
             onTitleChange={setTitle}
             onContentChange={setContent}
             onGenerateSummary={handleGenerateSummary}

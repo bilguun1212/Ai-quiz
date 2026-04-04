@@ -9,7 +9,8 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { userId: clerkId } = await auth();
+   
+    const { userId: clerkId } = auth(); 
     const user = await currentUser();
 
     if (!clerkId || !user) {
@@ -19,17 +20,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { text, title } = body;
 
-    // 1. Хэрэглэгчийг clerkId-аар нь хайж, байхгүй бол шинээр үүсгэнэ
-    // UPDATE хэсгээс email-ийг хасах хэрэгтэй. Тэгж байж Unique constraint алдаа арилна.
+    
     const dbUser = await prisma.user.upsert({
-      where: { 
-        clerkId: clerkId 
-      },
-      update: { 
-        name: user.firstName || "User",
-        // Энд email-ийг ШИНЭЧЛЭХ ГЭЖ ОРОЛДОХ ХЭРЭГГҮЙ. 
-        // Хэрэв email нь өөр clerkId дээр байгаа бол энд л алдаа заагаад байгаа юм.
-      },
+      where: { clerkId: clerkId },
+      update: { name: user.firstName || "User" },
       create: { 
         clerkId: clerkId, 
         email: user.emailAddresses[0].emailAddress,
@@ -37,36 +31,40 @@ export async function POST(req: Request) {
       },
     });
 
+  
     const existingArticle = await prisma.article.findFirst({
       where: {
         userId: dbUser.id,
         content: text,
       },
-      include: {
-        quizzes: true,
-      },
+      include: { quizzes: true },
     });
 
     if (existingArticle) {
       return NextResponse.json(existingArticle);
     }
 
-    // 2. OpenAI-аас хариу авах хэсэг
+   
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { 
           role: "system", 
-          content: "Чи бол боловсролын туслах. Хариуг ЗААВАЛ JSON форматаар өг: {'summary': 'string', 'quiz': [{'question': 'string', 'options': ['array'], 'answer': 'string'}]}" 
+          content: "Чи бол боловсролын туслах. Хариуг ЗААВАЛ JSON форматаар өг: {'summary': 'текст', 'quizzes': [{'question': 'string', 'options': ['array'], 'answer': 'string'}]}. Түлхүүр үг нь ЗААВАЛ 'quizzes' байх ёстой." 
         },
         { role: "user", content: text }
       ],
       response_format: { type: "json_object" }, 
     });
 
-    const aiData = JSON.parse(completion.choices[0].message.content!);
+    const content = completion.choices[0].message.content;
+    if (!content) throw new Error("AI хариу өгсөнгүй");
+    
+    const aiData = JSON.parse(content);
+ 
+    const quizArray = aiData.quizzes || aiData.quiz || [];
 
-    // 3. Өгөгдлийн санд нийтлэл болон асуултуудыг хадгалах
+  
     const newArticle = await prisma.article.create({
       data: {
         title: title || "Гарчиггүй",
@@ -74,16 +72,14 @@ export async function POST(req: Request) {
         summary: aiData.summary || "",
         userId: dbUser.id, 
         quizzes: {
-          create: aiData.quiz.map((q: any) => ({
+          create: quizArray.map((q: any) => ({
             question: q.question,
             options: q.options,
             answer: q.answer,
           })),
         },
       },
-      include: {
-        quizzes: true
-      }
+      include: { quizzes: true }
     });
 
     return NextResponse.json(newArticle);

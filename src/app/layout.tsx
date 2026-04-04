@@ -1,28 +1,30 @@
-"use client";
-
-import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-
+import "../app/globals.css";
 
 import {
   ClerkProvider,
   SignIn,
   ClerkLoaded,
-  Show,
+  SignedIn,
+  SignedOut,
 } from "@clerk/nextjs";
 
-
-import HeaderComponent from "@/components/Header";
+import Header from "@/components/Header";
 import { UserProvider } from "@/contexts/UserContext";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const metadata: Metadata = {
+  title: "Quiz App",
+  description: "Test your knowledge with our quiz app",
+};
+
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <ClerkProvider>
@@ -30,22 +32,22 @@ export default function RootLayout({
         <body className={inter.className}>
           <ClerkLoaded>
             
-            <Show when="signed-in">
+            <SignedIn>
               <UserProvider>
-                <HeaderComponent />
+                <Header />
                 <main className="mx-auto">
                   {children}
                 </main>
               </UserProvider>
-            </Show>
+            </SignedIn>
 
-            <Show when="signed-out">
+            <SignedOut>
               <div className="flex justify-center items-center min-h-screen bg-gray-50">
                 <div className="p-6 w-full max-w-md">
                   <SignIn routing="hash" />
                 </div>
               </div>
-            </Show>
+            </SignedOut>
 
           </ClerkLoaded>
           <Toaster richColors position="top-center" />

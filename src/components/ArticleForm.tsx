@@ -22,6 +22,7 @@ interface ArticleFormProps {
   content: string;
   summary: string | null;
   loading: boolean;
+  isSaving?: boolean;
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
   onGenerateSummary: (e: React.FormEvent) => void;
@@ -34,6 +35,7 @@ export default function ArticleForm({
   content,
   summary,
   loading,
+  isSaving = false,
   onTitleChange,
   onContentChange,
   onGenerateSummary,
@@ -122,12 +124,12 @@ export default function ArticleForm({
               <Button
                 type="button"
                 onClick={onSaveArticle}
-                disabled={loading || !title}
+                disabled={loading || !title || isSaving}
                 variant="outline"
                 className="flex gap-2 items-center"
               >
                 <Save className="w-4 h-4" />
-                Save Article
+                {isSaving ? "Saving..." : "Save Article"}
               </Button>
               <Button
                 type="button"
