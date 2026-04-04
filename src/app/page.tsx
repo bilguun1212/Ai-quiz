@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
 import ArticleForm from "@/components/ArticleForm";
 import { toast } from "sonner";
@@ -172,24 +173,51 @@ export default function Home() {
   };
 
   return (
-    <div className="flex">
-      <Sidebar articles={articles} loading={articleLoading} />
-      <main className="flex-1 p-8 min-h-screen bg-gray-50">
-        <div className="mx-auto max-w-2xl">
-          <ArticleForm
-            title={title}
-            content={content}
-            summary={summary}
-            loading={loading}
-            isSaving={isSaving}
-            onTitleChange={setTitle}
-            onContentChange={setContent}
-            onGenerateSummary={handleGenerateSummary}
-            onSaveArticle={handleSaveArticle}
-            onGenerateQuiz={handleGenerateQuiz}
-          />
+    <>
+      <SignedIn>
+        <div className="flex">
+          <Sidebar articles={articles} loading={articleLoading} />
+          <main className="flex-1 p-8 min-h-screen bg-gray-50">
+            <div className="mx-auto max-w-2xl">
+              <ArticleForm
+                title={title}
+                content={content}
+                summary={summary}
+                loading={loading}
+                isSaving={isSaving}
+                onTitleChange={setTitle}
+                onContentChange={setContent}
+                onGenerateSummary={handleGenerateSummary}
+                onSaveArticle={handleSaveArticle}
+                onGenerateQuiz={handleGenerateQuiz}
+              />
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      </SignedIn>
+
+      <SignedOut>
+        <div className="flex justify-center items-center min-h-screen bg-gray-50">
+          <div className="p-6 w-full max-w-md bg-white rounded-lg shadow-md">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Quiz App</h1>
+              <p className="text-gray-600">Please sign in to create and take quizzes</p>
+            </div>
+            <div className="space-y-3">
+              <SignInButton mode="modal">
+                <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </div>
+          </div>
+        </div>
+      </SignedOut>
+    </>
   );
 }

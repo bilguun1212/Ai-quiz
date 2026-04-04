@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "../app/globals.css";
+import "./globals.css";
 
-import {
-  ClerkProvider,
-  SignIn,
-  ClerkLoaded,
-  SignedIn,
-  SignedOut,
-} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 
 import Header from "@/components/Header";
 import { UserProvider } from "@/contexts/UserContext";
@@ -27,29 +21,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
+    >
       <html lang="mn">
         <body className={inter.className}>
-          <ClerkLoaded>
-            
-            <SignedIn>
-              <UserProvider>
-                <Header />
-                <main className="mx-auto">
-                  {children}
-                </main>
-              </UserProvider>
-            </SignedIn>
-
-            <SignedOut>
-              <div className="flex justify-center items-center min-h-screen bg-gray-50">
-                <div className="p-6 w-full max-w-md">
-                  <SignIn routing="hash" />
-                </div>
-              </div>
-            </SignedOut>
-
-          </ClerkLoaded>
+          <Header />
+          <main className="mx-auto">
+            {children}
+          </main>
           <Toaster richColors position="top-center" />
         </body>
       </html>

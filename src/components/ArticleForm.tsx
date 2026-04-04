@@ -1,7 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,16 +40,8 @@ export default function ArticleForm({
   onSaveArticle,
   onGenerateQuiz,
 }: ArticleFormProps) {
-  const { isSignedIn } = useUser();
-  const router = useRouter();
 
   const handleGenerateSummary = (e: React.FormEvent) => {
-    if (!isSignedIn) {
-      e.preventDefault();
-      toast.error("Please sign in to generate summaries");
-      router.push("/login");
-      return;
-    }
     onGenerateSummary(e);
   };
 

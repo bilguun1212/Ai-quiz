@@ -33,6 +33,8 @@ model Article {
   quizzes      Quiz[]
   quizAttempts QuizAttempt[]
   userScores   UserScore[]
+
+  @@unique([userId, content])
 }
 
 model Quiz {

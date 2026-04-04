@@ -32,16 +32,30 @@ export async function POST(req: Request) {
     });
 
   
-    const existingArticle = await prisma.article.findFirst({
+    // 2. Өмнө нь үүссэн эсэхийг шалгах (Дубликат сэргийлэл)
+    // Now using upsert for atomic operation - prevents race conditions
+    const article = await prisma.article.upsert({
       where: {
-        userId: dbUser.id,
+        userId_content: {
+          userId: dbUser.id,
+          content: text,
+        },
+      },
+      update: {
+        // If exists, just return it (no update needed)
+      },
+      create: {
+        title: title || "Гарчиггүй",
         content: text,
+        summary: "", // Will be updated after AI call
+        userId: dbUser.id,
       },
       include: { quizzes: true },
     });
 
-    if (existingArticle) {
-      return NextResponse.json(existingArticle);
+    // If article already has quizzes, return it
+    if (article.quizzes && article.quizzes.length > 0) {
+      return NextResponse.json(article);
     }
 
    
@@ -64,13 +78,11 @@ export async function POST(req: Request) {
  
     const quizArray = aiData.quizzes || aiData.quiz || [];
 
-  
-    const newArticle = await prisma.article.create({
+    // 4. Update article with AI-generated content and create quizzes
+    const updatedArticle = await prisma.article.update({
+      where: { id: article.id },
       data: {
-        title: title || "Гарчиггүй",
-        content: text,
         summary: aiData.summary || "",
-        userId: dbUser.id, 
         quizzes: {
           create: quizArray.map((q: any) => ({
             question: q.question,
@@ -82,7 +94,7 @@ export async function POST(req: Request) {
       include: { quizzes: true }
     });
 
-    return NextResponse.json(newArticle);
+    return NextResponse.json(updatedArticle);
 
   } catch (error: any) {
     console.error("АЛДАА ГАРЛАА:", error);
